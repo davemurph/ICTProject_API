@@ -18,7 +18,6 @@
 from _source_code import app
 from flask import Flask, jsonify, abort, request, make_response, json
 from flask.ext.httpauth import HTTPBasicAuth
-from threading import Thread
 import requests
 from rates_thread import RatesThread
 
@@ -26,13 +25,11 @@ from rates_thread import RatesThread
 auth = HTTPBasicAuth()
 
 
-# start instance of RatesThread	
 live_rates = RatesThread()
-live_rates.daemon = True # allows keyboard interrupt (ctrl-c) of all threads
+live_rates.daemon = True
 live_rates.start()
 
 
-# user authorisation
 @auth.get_password
 def get_password(username):
 	if username == 'daithi':
@@ -45,26 +42,27 @@ def unauthorized():
 	return make_response(jsonify( { 'error': 'Unauthorised access' } ), 403)
 	
 
-# url to return specific exchange rate
 @app.route('/testapi/convert/<string:currency>', methods = ['GET'])
-#@auth.login_required
+@auth.login_required
 def get_rate(currency):
 	if currency in live_rates.exchange_rates:
 		return jsonify ( { 'rate': live_rates.exchange_rates[currency] } )
 	else:
 		abort(404)
 		
-	
-# url to return currency conversion based on JSON request parameters		
+			
 @app.route('/testapi/convert', methods = ['POST'])
 @auth.login_required
 def convert_amount():
 	if not request.json:
 		abort(400)
+
 	if not 'from_currency' in request.json:
 		abort(400)
+
 	if not 'to_currency' in request.json:
 		abort(400)
+
 	if not 'amount' in request.json:
 		abort(400)
 		
@@ -81,15 +79,14 @@ def convert_amount():
 						request.json['to_currency'], 
 						request.json['amount'])
 
-	specific_rate = get_unit_rate(request.json['from_currency'],
+	unit_rate = get_unit_rate(request.json['from_currency'],
 									request.json['to_currency'])
 
 	return jsonify( { 'converted_amount': converted_amount, 
-						'unit_rate': specific_rate, 
+						'unit_rate': unit_rate, 
 						'last_update': live_rates.exchange_rate_last_update } )
 
 
-# url to return dictionary of currencies in JSON
 @app.route('/testapi/getcurrencies', methods = ['GET'])
 @auth.login_required
 def get_active_currency_list():
@@ -100,7 +97,6 @@ def get_active_currency_list():
 	return jsonify ( { 'currency_list': currency_list } )
 
 
-# JSON error handlers
 @app.errorhandler(404)
 def not_found(error):
 		return make_response(jsonify( { 'error': 'Resource not found' } ), 404)
@@ -111,7 +107,6 @@ def bad_request(error):
 		return make_response(jsonify( { 'error': 'Bad request' } ), 400)
 		
 
-# utility methods
 def get_unit_rate(from_currency, to_currency):
 	from_rate = live_rates.exchange_rates[from_currency]		
 	to_rate = live_rates.exchange_rates[to_currency]
@@ -125,7 +120,8 @@ def exchange(from_currency, to_currency, amount):
 		
 	return amount * to_rate / from_rate
 	
-	
+
+# validate value of key 'amount' as numerical	
 def validate_amount(amount):
 	if isinstance(amount, basestring):
 		return False	

@@ -1,7 +1,7 @@
 # class definition for thread object, used by
 # exchange_api.py to get live currency rates
 # from Google feed periodically
-# (return period = param in time.sleep(), measured in seconds)
+# (return period = parameter in time.sleep(), measured in seconds)
 
 from flask import json
 from threading import Thread
