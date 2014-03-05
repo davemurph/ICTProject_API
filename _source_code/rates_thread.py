@@ -12,7 +12,7 @@ class RatesThread (Thread):
 	def __init__(self):
 		'''Constructor'''
 		Thread.__init__(self)
-		self.exchange_rates = {'EUR': 1.0}
+		self.exchange_rates = {'EUR': ['1.00000', 'Euro']}
 		
 	def run(self):
 		while True:
@@ -23,10 +23,24 @@ class RatesThread (Thread):
 			number_of_currencies_in_feed = len(live_rates['feed']['entry'])			
 	
 			for currency_entry in range(number_of_currencies_in_feed):
-				currency = live_rates['feed']['entry'][currency_entry]['title']['$t']
-				rate_as_string = live_rates['feed']['entry'][currency_entry]['content']['$t']
-				rate = float(rate_as_string[8:])
+				currency_code = live_rates['feed']['entry'][currency_entry]['title']['$t']
 				
-				self.exchange_rates[currency] = rate				
-		
+				if currency_code in self.currency_codes:
+					currency_label = self.currency_codes[currency_code]
+
+				rate = live_rates['feed']['entry'][currency_entry]['content']['$t'][8:]
+								
+				self.exchange_rates[currency_code] = [rate, currency_label]
+
 			time.sleep(300)
+
+	currency_codes = {	'EUR': 'Euro', 
+						'USD': 'US Dollar',
+						'JPY': 'Japanese Yen', 
+						'GBP': 'British Pound',
+						'CHF': 'Swiss Franc', 
+						'AUD': 'Australian Dollar',
+						'CAD': 'Canadian Dollar',
+						'SEK': 'Swedish Krona',
+						'HKD': 'Hong Kong Dollar',
+						'NOK': 'Norwegian Krone'}
