@@ -34,6 +34,7 @@ class RatesThread (Thread):
 
 			time.sleep(300)
 
+
 	currency_codes = {	'EUR': 'Euro', 
 						'USD': 'US Dollar',
 						'JPY': 'Japanese Yen', 

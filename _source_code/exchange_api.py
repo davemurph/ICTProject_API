@@ -21,7 +21,11 @@ from flask.ext.httpauth import HTTPBasicAuth
 import requests
 from rates_thread import RatesThread
 from decimal import Decimal
+import keyring
+from app_keyring import FlaskAppKeyring
 
+
+keyring.set_keyring(FlaskAppKeyring())
 
 auth = HTTPBasicAuth()
 
@@ -33,11 +37,13 @@ live_rates.start()
 RATE_INDEX = 0
 LABEL_INDEX = 1
 
+keyring.set_password('exchange-api', 'daithi', 'pass1234')
+
 
 @auth.get_password
 def get_password(username):
 	if username == 'daithi':
-		return 'pass1234'
+		return keyring.get_password('exchange-api', 'daithi')
 	return None
 
 
