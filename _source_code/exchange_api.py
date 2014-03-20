@@ -21,6 +21,7 @@ from flask.ext.httpauth import HTTPBasicAuth
 import requests
 from rates_thread import RatesThread
 from decimal import Decimal
+from models import db, User
 
 
 auth = HTTPBasicAuth()
@@ -34,11 +35,64 @@ RATE_INDEX = 0
 LABEL_INDEX = 1
 
 
-@auth.get_password
-def get_password(username):
-	if username == 'daithi':
-		return 'pass1234'
-	return None
+@app.route('/testapi/queryuser', methods = ['POST'])
+def query_user():
+	if not request.json:
+		abort(400)
+
+	if not 'email' in request.json:
+		abort(400)
+
+	if 'email' in request.json and not 'password' in request.json:
+		email = request.json['email']
+		user = User.query.filter_by(email = email.lower()).first()
+	
+		if user:
+			return jsonify ( { 'user_exists': 'true' } )
+		else:
+			return jsonify ( { 'user_exists': 'false' } )
+
+	elif 'email' in request.json and 'password' in request.json:
+		email = request.json['email']
+		password = request.json['password']
+		user = User.query.filter_by(email = email.lower()).first()
+
+		if user and user.check_password(password):
+			return jsonify ( { 'user_exists': 'true' } )
+		else:
+			return jsonify ( { 'user_exists': 'false' } )
+
+
+@app.route('/testapi/createuser', methods = ['POST'])
+def create_user():
+	if not request.json:
+		abort(400)
+
+	if not 'email' in request.json:
+		abort(400)
+
+	if not 'password' in request.json:
+		abort(400)
+
+	email = request.json['email']
+	password = request.json['password']
+
+	user = User.query.filter_by(email = email.lower()).first()
+	if user:
+		return jsonify ( { 'create_user_attempt': 'user_exists' } )
+	else:
+		newuser = User(email, password)
+		db.session.add(newuser)
+		db.session.commit()
+		return jsonify ( { 'create_user_attempt': 'successful' } )
+
+
+@auth.verify_password
+def verify_pw(username, password):
+	user = User.query.filter_by(email = username.lower()).first()	
+	if user:
+		return user.check_password(password)
+	return False
 
 
 @auth.error_handler
