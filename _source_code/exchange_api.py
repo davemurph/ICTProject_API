@@ -16,12 +16,13 @@
 # by Miguel Grinberg
 
 from _source_code import app
-from flask import Flask, jsonify, abort, request, make_response, json
+from flask import Flask, jsonify, abort, request, make_response, json, flash, render_template
 from flask.ext.httpauth import HTTPBasicAuth
 import requests
 from rates_thread import RatesThread
 from decimal import Decimal
-from models import db, User
+from models import db_session, Subscriber, StoredRate
+from forms import AddSubscriber
 
 
 auth = HTTPBasicAuth()
@@ -31,68 +32,13 @@ live_rates = RatesThread()
 live_rates.daemon = True
 live_rates.start()
 
-RATE_INDEX = 0
-LABEL_INDEX = 1
-
-
-@app.route('/testapi/queryuser', methods = ['POST'])
-def query_user():
-	if not request.json:
-		abort(400)
-
-	if not 'email' in request.json:
-		abort(400)
-
-	if 'email' in request.json and not 'password' in request.json:
-		email = request.json['email']
-		user = User.query.filter_by(email = email.lower()).first()
-	
-		if user:
-			return jsonify ( { 'user_exists': 'true' } )
-		else:
-			return jsonify ( { 'user_exists': 'false' } )
-
-	elif 'email' in request.json and 'password' in request.json:
-		email = request.json['email']
-		password = request.json['password']
-		user = User.query.filter_by(email = email.lower()).first()
-
-		if user and user.check_password(password):
-			return jsonify ( { 'user_exists': 'true' } )
-		else:
-			return jsonify ( { 'user_exists': 'false' } )
-
-
-@app.route('/testapi/createuser', methods = ['POST'])
-def create_user():
-	if not request.json:
-		abort(400)
-
-	if not 'email' in request.json:
-		abort(400)
-
-	if not 'password' in request.json:
-		abort(400)
-
-	email = request.json['email']
-	password = request.json['password']
-
-	user = User.query.filter_by(email = email.lower()).first()
-	if user:
-		return jsonify ( { 'create_user_attempt': 'user_exists' } )
-	else:
-		newuser = User(email, password)
-		db.session.add(newuser)
-		db.session.commit()
-		return jsonify ( { 'create_user_attempt': 'successful' } )
-
 
 @auth.verify_password
-def verify_pw(username, password):
-	user = User.query.filter_by(email = username.lower()).first()	
-	if user:
-		return user.check_password(password)
-	return False
+def verify_password(username, password):
+	subscriber = Subscriber.query.filter_by(username = username).first()
+	if subscriber is None:
+		return False
+	return subscriber.check_password(password)
 
 
 @auth.error_handler
@@ -100,13 +46,24 @@ def unauthorized():
 	return make_response(jsonify( { 'error': 'Unauthorised access' } ), 403)
 	
 
-@app.route('/testapi/convert/<string:currency>', methods = ['GET'])
-@auth.login_required
-def get_rate(currency):
-	if currency in live_rates.exchange_rates:
-		return jsonify ( { 'rate': live_rates.exchange_rates[currency] } )
-	else:
-		abort(404)
+@app.route('/testapi/addsubscriber', methods = ['GET', 'POST'])
+def add_subscriber():
+	form = AddSubscriber()
+
+	if request.method == 'POST':
+		if form.validate() == False:
+			return render_template('apiadmin.html', form = form)
+
+		else:
+			new_subscriber = Subscriber(form.username.data, form.password.data)
+			db_session.add(new_subscriber)
+			db_session.commit()
+			flash('New subscriber added')
+
+			return render_template('apiadmin.html', form = form)
+
+	elif request.method == 'GET':
+		return render_template('apiadmin.html', form = form)
 		
 			
 @app.route('/testapi/convert', methods = ['POST'])
@@ -127,13 +84,6 @@ def convert_amount():
 	if not validate_amount(request.json['amount']):
 		abort(400)
 		
-	if request.json['from_currency'] not in live_rates.exchange_rates:
-		abort(404)
-
-	if request.json['to_currency'] not in live_rates.exchange_rates:
-		abort(404)
-
-	
 	converted_amount = exchange(request.json['from_currency'], 
 								request.json['to_currency'], 
 								request.json['amount'])
@@ -141,18 +91,26 @@ def convert_amount():
 	unit_rate = get_unit_rate(request.json['from_currency'],
 							  request.json['to_currency'])
 
+	exchange_rate_last_update = StoredRate.query.order_by(StoredRate.last_update.desc()).first().last_update
+
 	return jsonify( { 'converted_amount': converted_amount, 
 					  'unit_rate': unit_rate, 
-					  'last_update': live_rates.exchange_rate_last_update } )
+					  'last_update': exchange_rate_last_update } )
 
 
 @app.route('/testapi/getcurrencies', methods = ['GET'])
 @auth.login_required
 def get_active_currency_list():
 	currency_list = {}
-	for currency_code in live_rates.exchange_rates:
-		currency_list[currency_code] = live_rates.exchange_rates[currency_code][LABEL_INDEX]
-		
+
+	min_currency_id = StoredRate.query.order_by(StoredRate.currid).first().currid	
+	number_of_available_currencies = StoredRate.query.count()	
+	
+	for currency_record in range(min_currency_id, min_currency_id + number_of_available_currencies):
+		currency = StoredRate.query.filter_by(currid = currency_record).first()
+
+		currency_list[currency.currcode] = currency.currlabel
+
 	return jsonify ( { 'currency_list': currency_list } )
 
 
@@ -167,8 +125,11 @@ def bad_request(error):
 		
 
 def get_unit_rate(from_currency, to_currency):
-	from_rate = live_rates.exchange_rates[from_currency][RATE_INDEX]		
-	to_rate = live_rates.exchange_rates[to_currency][RATE_INDEX]
+	from_currency_listing = StoredRate.query.filter_by(currcode = from_currency).first()
+	to_currency_listing = StoredRate.query.filter_by(currcode = to_currency).first()
+
+	from_rate = from_currency_listing.rate
+	to_rate = to_currency_listing.rate
 
 	decimal_from_rate = Decimal(from_rate)
 	decimal_to_rate = 	Decimal(to_rate)
@@ -180,14 +141,18 @@ def get_unit_rate(from_currency, to_currency):
 	
 			
 def exchange(from_currency, to_currency, amount):
-	from_rate = live_rates.exchange_rates[from_currency][RATE_INDEX]		
-	to_rate = live_rates.exchange_rates[to_currency][RATE_INDEX]
+	from_currency_listing = StoredRate.query.filter_by(currcode = from_currency).first()
+	to_currency_listing = StoredRate.query.filter_by(currcode = to_currency).first()
+
+	from_rate = from_currency_listing.rate
+	to_rate = to_currency_listing.rate
 
 	decimal_from_rate = Decimal(from_rate)
 	decimal_to_rate = 	Decimal(to_rate)
 	decimal_amount = 	Decimal(amount)
 
 	decimal_converted_amount = decimal_amount * decimal_to_rate / decimal_from_rate
+
 
 	# return a string for JSON string		
 	return str(decimal_converted_amount)

@@ -1,0 +1,23 @@
+<!-- baseLayout.html
+ICT Project - API
+D Murphy -->
+
+<!doctype html>
+<html>
+	<head>
+		<title>Currency Conv API</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/api.css') }}">
+	</head>
+	<body>
+		<header>
+			<div class="container">
+				<h1 class="logo">Currency Convert API admin</h1>			
+			</div>
+		</header>
+			
+		<div class="container">
+			{% block content %}
+			{% endblock %}
+		</div>
+	</body>
+</html>

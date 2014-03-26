@@ -1,0 +1,50 @@
+<!-- apiadmin.html
+ICT Project - API
+D Murphy -->
+
+{% extends "baseLayout.html" %}
+
+{% block content %}	
+	<h3>Add a new subscriber</h3>		
+
+	{% for message in form.username.errors %}
+		<div class = "flashred">{{ message }}</div>
+	{% endfor %}
+
+	{% for message in form.password.errors %}
+		<div class = "flashred">{{ message }}</div>
+	{% endfor %}
+
+	{% for message in form.adminpassword.errors %}
+		<div class = "flashred">{{ message }}</div>
+	{% endfor %}
+
+	{% with messages = get_flashed_messages() %}
+ 		{% if messages %}
+    		<ul class = "flashgreen">
+    			{% for message in messages %}
+     				{{ message }}
+    			{% endfor %}
+   			</ul>
+  		{% endif %}
+	{% endwith %}
+		
+	<form action="{{ url_for('add_subscriber') }}" method="post">
+		{{ form.hidden_tag() }}		
+		
+		{{ form.username.label }}
+		{{ form.username }}
+		
+		{{ form.password.label }}
+		{{ form.password }}
+
+		<hr>
+
+		{{ form.adminpassword.label }}
+		{{ form.adminpassword }}
+
+	
+		{{ form.submit }}
+	</form>	
+	
+{% endblock %}
