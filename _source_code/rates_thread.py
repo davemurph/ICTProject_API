@@ -6,7 +6,8 @@
 from flask import json
 from threading import Thread
 import requests, time
-from models import db_session, StoredRate
+from models import StoredRate
+from database import db_session
 
 
 class RatesThread (Thread):

@@ -4,6 +4,7 @@ from wtforms import ValidationError
 from models import Subscriber
 from configobj import ConfigObj
 
+
 # config data
 config = ConfigObj('config_settings.ini')
 admin_password = (config['admin_password']['password'])

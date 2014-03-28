@@ -1,1 +1,1 @@
-web: gunicorn runp-heroku:app
+web: python runserver.py

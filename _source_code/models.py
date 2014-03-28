@@ -1,17 +1,6 @@
-from flask.ext.sqlalchemy import SQLAlchemy
 from werkzeug import generate_password_hash, check_password_hash
-
 from sqlalchemy import Column, Integer, String, Numeric, DateTime
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-
-
-engine = create_engine('postgresql+psycopg2://daithi:david1979@localhost/exch_rates_db')
-db_session = scoped_session(sessionmaker(bind=engine))
-
-Base = declarative_base()
-Base.query = db_session.query_property()
+from database import Base
 
 
 class Subscriber(Base):

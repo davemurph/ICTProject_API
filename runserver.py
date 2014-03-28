@@ -1,1 +1,1 @@
-from _source_code import appapp.run(debug=True, port=8000)
+import osimport eventletfrom eventlet import wsgifrom _source_code import appport = int(os.environ.get("PORT", 5000))wsgi.server(eventlet.listen(('0.0.0.0', port)), app)

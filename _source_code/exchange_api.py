@@ -21,7 +21,8 @@ from flask.ext.httpauth import HTTPBasicAuth
 import requests
 from rates_thread import RatesThread
 from decimal import Decimal
-from models import db_session, Subscriber, StoredRate
+from models import Subscriber, StoredRate
+from database import db_session
 from forms import AddSubscriber
 
 
@@ -31,6 +32,11 @@ auth = HTTPBasicAuth()
 live_rates = RatesThread()
 live_rates.daemon = True
 live_rates.start()
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+	db_session.remove()
 
 
 @auth.verify_password
@@ -64,6 +70,7 @@ def add_subscriber():
 
 	elif request.method == 'GET':
 		return render_template('apiadmin.html', form = form)
+
 		
 			
 @app.route('/testapi/convert', methods = ['POST'])
