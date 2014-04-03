@@ -164,21 +164,27 @@ form input#enterButton {
 /* Message flashing */
 .flashgreen {
   margin: 3px;
-  background-color: #31D422;
-  padding: 10px;
+  background-color: #EFFFED;
+  border-style: solid;
+  border-color: #31D422;
+  border-width: 2px;
+  padding: 8px;
   width: 400px;
-  border-radius: 0.2em;
-  color: white;
+  border-radius: 5px;
+  color: #31D422;
   font-weight: bold;
 }
 
 .flashred {
   margin: 3px;
-  background-color: #F53333;
-  padding: 10px;
+  background-color: #FFE8E3;
+  border-style: solid;
+  border-color: #F53333;
+  border-width: 2px;
+  padding: 8px;
   width: 400px;
-  border-radius: 0.2em;
-  color: white;
+  border-radius: 5px;
+  color: #F53333;
   font-weight: bold;
 }
 

@@ -11,8 +11,8 @@ admin_password = (config['admin_password']['password'])
 
 
 class AddSubscriber(Form):
-	username = TextField('Username', [validators.Required('You must supply a username')])
-	password = PasswordField('Password', [validators.Required("You must supply a password")])
+	username = TextField('New subscriber username', [validators.Required('You must supply a username')])
+	password = PasswordField('New subscriber password', [validators.Required("You must supply a password")])
 	adminpassword = PasswordField('Administrator password', [validators.Required('You must supply an administrator password')])
 	submit = SubmitField('Create user account')
 
