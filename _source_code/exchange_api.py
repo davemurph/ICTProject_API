@@ -52,7 +52,7 @@ def unauthorized():
 	return make_response(jsonify( { 'error': 'Unauthorised access' } ), 403)
 	
 
-@app.route('/testapi/addsubscriber', methods = ['GET', 'POST'])
+@app.route('/currencyapi/addsubscriber', methods = ['GET', 'POST'])
 def add_subscriber():
 	form = AddSubscriber()
 
@@ -71,9 +71,8 @@ def add_subscriber():
 	elif request.method == 'GET':
 		return render_template('apiadmin.html', form = form)
 
-		
-			
-@app.route('/testapi/convert', methods = ['POST'])
+
+@app.route('/currencyapi/convert', methods = ['POST'])
 @auth.login_required
 def convert_amount():
 	if not request.json:
@@ -105,7 +104,7 @@ def convert_amount():
 					  'last_update': exchange_rate_last_update } )
 
 
-@app.route('/testapi/getcurrencies', methods = ['GET'])
+@app.route('/currencyapi/getcurrencies', methods = ['GET'])
 @auth.login_required
 def get_active_currency_list():
 	currency_list = {}
@@ -159,7 +158,6 @@ def exchange(from_currency, to_currency, amount):
 	decimal_amount = 	Decimal(amount)
 
 	decimal_converted_amount = decimal_amount * decimal_to_rate / decimal_from_rate
-
 
 	# return a string for JSON string		
 	return str(decimal_converted_amount)

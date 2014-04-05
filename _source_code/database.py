@@ -3,7 +3,7 @@
 
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, create_session
 from sqlalchemy.ext.declarative import declarative_base
 
 database_uri = os.environ.get('DATABASE_URL', 'postgresql+psycopg2://postgres:pass1234@localhost/exch_rates_db') 
@@ -15,6 +15,7 @@ Base = declarative_base()
 Base.query = db_session.query_property()
 
 
+# uncomment this section when creating database for the first time locally
 '''
 db_session.connection().connection.set_isolation_level(0)
 db_session.execute('CREATE DATABASE exch_rates_db')
